@@ -1,0 +1,10 @@
+[Unit]
+Description=Service that will watch directories and automatically uploads the files onto a F5 BigIP instance.
+
+[Service]
+Restart=always
+RestartSec=3
+ExecStart=/usr/local/bin/f5-auto-uploader -config /usr/local/etc/f5-auto-uploader/config.toml
+
+[Install]
+WantedBy=multi-user.target
