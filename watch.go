@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/e-XpertSolutions/f5-rest-client/f5"
 	fsnotify "gopkg.in/fsnotify.v1"
 )
@@ -32,7 +35,7 @@ type watchRoutine struct {
 	stopCh  chan struct{}
 }
 
-func watchDir(f5Client *f5.Client, logger logger, cfg watchConfig) (*watchRoutine, error) {
+func watchDir(f5Client *f5.Client, l logger, cfg watchConfig) (*watchRoutine, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -43,22 +46,46 @@ func watchDir(f5Client *f5.Client, logger logger, cfg watchConfig) (*watchRoutin
 			select {
 			case event := <-watcher.Events:
 				e := watchEvent(event)
+				if e.isChmod() {
+					continue
+				}
+
+				fmt.Printf("testing %q against %v", e.Name, cfg.Exclude)
+				if isExcluded(filepath.Base(e.Name), cfg.Exclude) {
+					l.Noticef("skipping %q due to an exclusion pattern defined in the configuration file", e.Name)
+					continue
+				}
+
+				tx, err := f5Client.Begin()
+				if err != nil {
+					l.Errorf("cannot start f5 transaction for file %q", e.Name)
+					continue
+				}
+
 				switch {
 				case e.isCreate():
-					logger.Notice("CREATE: ", e.Name)
-					// TODO(gilliek): create new file
+					l.Noticef("event received %q for file %q", "CREATE", e.Name)
+					err = uploadNewFile(tx, filepath.Base(e.Name), e.Name)
 				case e.isWrite():
-					logger.Notice("WRITE: ", e.Name)
-					// TODO(gilliek): update existing file
+					l.Noticef("event received %q for file %q", "WRITE", e.Name)
+					err = uploadExistingFile(tx, filepath.Base(e.Name), e.Name)
 				case e.isRename():
-					logger.Notice("RENAME: ", e.Name)
-					// TODO(gilliek): scan the directory to see what to remove?
+					l.Noticef("event received %q for file %q", "RENAME", e.Name)
+					err = deleteFile(tx, filepath.Base(e.Name))
 				case e.isRemove():
-					logger.Notice("REMOVE: ", e.Name)
-					// TODO(gilliek): delete?
+					l.Noticef("event received %q for file %q", "REMOVE", e.Name)
+					err = deleteFile(tx, filepath.Base(e.Name))
+				}
+				if err != nil {
+					l.Errorf("cannot upload file %q: %v", e.Name, err)
+					continue
+				}
+
+				if err := tx.Commit(); err != nil {
+					l.Errorf("cannot commit f5 transaction for file %q: %v", e.Name, err)
 				}
 			case err := <-watcher.Errors:
-				logger.Error("watcher error: ", err)
+				l.Error("watcher error: ", err)
 			case <-stopCh:
 				return
 			}
