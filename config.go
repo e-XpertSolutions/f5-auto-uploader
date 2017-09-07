@@ -17,12 +17,13 @@ type f5Config struct {
 }
 
 type watchConfig struct {
-	Dir string `toml:"directory"`
+	Dir     string   `toml:"directory"`
+	Exclude []string `toml:"exclude"`
 }
 
 type config struct {
-	F5    f5Config    `toml:"f5"`
-	Watch watchConfig `toml:"watch"`
+	F5    f5Config      `toml:"f5"`
+	Watch []watchConfig `toml:"watch"`
 }
 
 func readConfig(path string) (*config, error) {
