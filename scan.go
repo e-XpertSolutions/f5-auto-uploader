@@ -4,15 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/e-XpertSolutions/f5-rest-client/f5"
 	"github.com/e-XpertSolutions/f5-rest-client/f5/ltm"
-	"github.com/e-XpertSolutions/f5-rest-client/f5/sys"
 )
 
-func scanDir(dir string, f5Client *f5.Client) error {
+func scanDir(dir string, excl []string, f5Client *f5.Client) error {
 	ltmClient := ltm.New(f5Client)
 	ifilesList, err := ltmClient.IFile().ListAll()
 	if err != nil {
@@ -32,65 +30,36 @@ func scanDir(dir string, f5Client *f5.Client) error {
 	}
 	var totalChanges int
 	for _, fi := range fis {
-		if fi.IsDir() {
+		if fi.IsDir() || isExcluded(fi.Name(), excl) {
+			continue
+		}
+		path := filepath.Join(dir, fi.Name())
+		filesize := fi.Size()
+		if filesize == 0 {
 			continue
 		}
 		if _, ok := existingFiles[fi.Name()]; !ok {
-			path := filepath.Join(dir, fi.Name())
-			filesize := fi.Size()
-			if filesize == 0 {
-				continue
-			}
-			if err := uploadNewFile(tx, fi.Name(), path, filesize); err != nil {
+			if err := uploadNewFile(tx, fi.Name(), path); err != nil {
 				return err
 			}
-			totalChanges++
+		} else {
+			same, err := isSameRevision(tx, fi.Name(), path)
+			if err != nil {
+				return err
+			}
+			if same {
+				continue
+			}
+			if err := uploadExistingFile(tx, fi.Name(), path); err != nil {
+				return err
+			}
 		}
+		totalChanges++
 	}
 	if totalChanges > 0 {
 		if err := tx.Commit(); err != nil {
 			return errors.New("cannot commit transaction: " + err.Error())
 		}
 	}
-	return nil
-}
-
-func uploadNewFile(tx *f5.Client, name, path string, filesize int64) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("cannot read file %q: %v", path, err)
-	}
-	defer f.Close()
-
-	sysClient := sys.New(tx)
-	if err := sysClient.FileIFile().CreateFromFile(name, f, filesize); err != nil {
-		return fmt.Errorf("an error occured while uploading %q: %v", path, err)
-	}
-
-	ltmClient := ltm.New(tx)
-	if err := ltmClient.IFile().Create(name, name); err != nil {
-		return fmt.Errorf("cannot create file %q in ltm ifiles: %v", path, err)
-	}
-
-	return nil
-}
-
-func uploadExistingFile(tx *f5.Client, name, path string, filesize int64) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("cannot read file %q: %v", path, err)
-	}
-	defer f.Close()
-
-	sysClient := sys.New(tx)
-	if err := sysClient.FileIFile().EditFromFile(name, f, filesize); err != nil {
-		return fmt.Errorf("an error occured while re-uploading %q: %v", path, err)
-	}
-
-	ltmClient := ltm.New(tx)
-	if err := ltmClient.IFile().Edit(name, name); err != nil {
-		return fmt.Errorf("cannot update file %q in ltm ifiles: %v", path, err)
-	}
-
 	return nil
 }
