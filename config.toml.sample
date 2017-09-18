@@ -1,0 +1,10 @@
+[f5]
+auth_method = "basic"
+url = "https://bigip-url"
+user = "admin"
+password = "admin"
+ssl_check = false
+
+[[watch]]
+directory = "/tmp/test"
+exclude = [".*"]
