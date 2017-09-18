@@ -87,7 +87,7 @@ func initF5Client(cfg f5Config) (*f5.Client, error) {
 			cfg.User,
 			cfg.Password,
 			cfg.LoginProviderName,
-			cfg.SSLCheck,
+			!cfg.SSLCheck,
 		)
 	default:
 		err = errors.New("unsupported auth method \"" + authMethod + "\"")
