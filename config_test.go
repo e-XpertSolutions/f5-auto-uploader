@@ -109,7 +109,7 @@ func testReadConfigFailDecode(t *testing.T, invalidFile *os.File) {
 	if err == nil {
 		t.Fatalf("readConfig(%q): expected error, got nil", path)
 	}
-	wantErr := "cannot read configuration file: Near line 0 (last key parsed ''): Bare keys cannot contain '{'."
+	wantErr := "cannot read configuration file: Near line 0 (last key parsed ''): bare keys cannot contain '{'"
 	if err.Error() != wantErr {
 		t.Errorf("readConfig(%q): got error %q; want %q", path, err.Error(), wantErr)
 	}
