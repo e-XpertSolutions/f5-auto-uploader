@@ -3,6 +3,10 @@
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-yellow.svg?style=flat)](https://github.com/e-XpertSolutions/f5-auto-uploader/blob/master/LICENSE)
 [![Travis](https://travis-ci.org/e-XpertSolutions/f5-auto-uploader.svg?branch=master)](https://travis-ci.org/e-XpertSolutions/f5-auto-uploader)
 
+`f5-auto-uploader` is a small service that watches for changes in a directory
+and automatically uploads the files either to create them or to update them.
+Uploaded files are also linked to iFiles for the LTM module.
+
 
 ## Contributing
 
