@@ -13,7 +13,7 @@ type f5Config struct {
 	User              string `toml:"user"`
 	Password          string `toml:"password"`
 	SSLCheck          bool   `toml:"ssl_check"`
-	LoginProviderName string `toml:"login_provided_name"`
+	LoginProviderName string `toml:"login_provider_name"`
 }
 
 type watchConfig struct {
