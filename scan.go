@@ -30,7 +30,7 @@ func scanDir(dir string, excl []string, f5Client *f5.Client) error {
 	}
 	var totalChanges int
 	for _, fi := range fis {
-		if fi.IsDir() || isExcluded(fi.Name(), excl) {
+		if fi.IsDir() || !fi.Mode().IsRegular() || isExcluded(fi.Name(), excl) {
 			continue
 		}
 		path := filepath.Join(dir, fi.Name())
