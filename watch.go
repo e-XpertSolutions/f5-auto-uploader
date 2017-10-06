@@ -73,6 +73,9 @@ func watchDir(f5Client *f5.Client, l logger, cfg watchConfig) (*watchRoutine, er
 					l.Noticef("event received %q for file %q", "RENAME", e.Name)
 					err = deleteFile(tx, filepath.Base(e.Name))
 				case e.isRemove():
+					if !cfg.RemoveRemoveFiles {
+						continue
+					}
 					l.Noticef("event received %q for file %q", "REMOVE", e.Name)
 					err = deleteFile(tx, filepath.Base(e.Name))
 				}

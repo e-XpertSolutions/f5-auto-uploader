@@ -19,6 +19,7 @@ type f5Config struct {
 type watchConfig struct {
 	Dir     string   `toml:"directory"`
 	Exclude []string `toml:"exclude"`
+	RemoveRemoveFiles  bool     `toml:"remove_remote_files"`
 }
 
 type config struct {
