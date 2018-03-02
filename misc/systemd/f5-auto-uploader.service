@@ -3,7 +3,8 @@ Description=Service that will watch directories and automatically uploads the fi
 
 [Service]
 Restart=always
-RestartSec=3
+erestartSec=3
+User=f5-auto-uploader
 ExecStart=/usr/local/bin/f5-auto-uploader -config /usr/local/etc/f5-auto-uploader/config.toml
 
 [Install]
