@@ -23,7 +23,7 @@ import (
 
 const (
 	major  = "1"
-	minor  = "0"
+	minor  = "1"
 	bugfix = "0"
 )
 
@@ -89,7 +89,6 @@ func initF5Client(cfg f5Config) (*f5.Client, error) {
 			cfg.User,
 			cfg.Password,
 			cfg.LoginProviderName,
-			false,
 		)
 	default:
 		err = errors.New("unsupported auth method \"" + authMethod + "\"")
@@ -174,11 +173,11 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	/*if !f5Client.IsActive() {
+	if !f5Client.IsActive() {
 		fatal(fmt.Sprintf("big-ip instance %q is not available at the moment", cfg.F5.URL))
 	} else {
 		verbose("big-ip instance is available and rest client has been successfully configured")
-	}*/
+	}
 
 	l := newLogger(os.Stderr)
 
