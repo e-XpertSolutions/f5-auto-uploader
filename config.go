@@ -17,13 +17,18 @@ type f5Config struct {
 }
 
 type watchConfig struct {
-	Dir     string   `toml:"directory"`
-	Exclude []string `toml:"exclude"`
-	RemoveRemoveFiles  bool     `toml:"remove_remote_files"`
+	Dir               string   `toml:"directory"`
+	Exclude           []string `toml:"exclude"`
+	RemoveRemoveFiles bool     `toml:"remove_remote_files"`
 }
 
 type config struct {
-	F5    f5Config      `toml:"f5"`
+	F5 f5Config `toml:"f5"`
+
+	CredentialStorage string `toml:"credential_storage"` // "plain" or "secret"
+	SecretStorePath   string `toml:"secret_store_path"`  // when CredentialStorage is "secret"
+	Passphrase        string `toml:"token"`              // when CredentialStorage is "secret"
+
 	Watch []watchConfig `toml:"watch"`
 }
 

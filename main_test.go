@@ -141,7 +141,10 @@ func testInitF5ClientHappyPathWithTokenAuth(t *testing.T) {
 }
 
 func testInitF5ClientFailTokenAuth(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// XXX(gilliek): token auth changed and the token is not negociated at
+	// initialization.
+
+	/*ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "some error", http.StatusBadRequest)
 	}))
 	defer ts.Close()
@@ -159,7 +162,7 @@ func testInitF5ClientFailTokenAuth(t *testing.T) {
 	wantErr := "failed to create token client (token negociation failed): http status 400 Bad Request"
 	if got := err.Error(); got != wantErr {
 		t.Errorf("initF5Client(): got error %q; want %q", got, wantErr)
-	}
+	}*/
 }
 
 func testInitF5ClientUnsupportedAuthMethod(t *testing.T) {

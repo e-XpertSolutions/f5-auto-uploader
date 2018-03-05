@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 
 	"github.com/e-XpertSolutions/f5-rest-client/f5"
+	"github.com/e-XpertSolutions/go-secret/secret"
+	"github.com/howeyc/gopass"
 )
 
 const (
@@ -87,7 +89,7 @@ func initF5Client(cfg f5Config) (*f5.Client, error) {
 			cfg.User,
 			cfg.Password,
 			cfg.LoginProviderName,
-			!cfg.SSLCheck,
+			false,
 		)
 	default:
 		err = errors.New("unsupported auth method \"" + authMethod + "\"")
@@ -99,6 +101,35 @@ func initF5Client(cfg f5Config) (*f5.Client, error) {
 		f5Client.DisableCertCheck()
 	}
 	return f5Client, nil
+}
+
+// readUserCredentials reads a pair of username/passphrase from a gosecret
+// secret store.
+func readUserCredentials(path, passphrase string) (username, password string, err error) {
+	if _, err = os.Stat(path); err != nil {
+		return
+	}
+
+	var store *secret.Store
+	store, err = secret.OpenStore(path, passphrase)
+	if err != nil {
+		return
+	}
+
+	var value []byte
+	value, err = store.Get("username")
+	if err != nil {
+		return
+	}
+	username = string(value)
+
+	value, err = store.Get("password")
+	if err != nil {
+		return
+	}
+	password = string(value)
+
+	return
 }
 
 var (
@@ -119,11 +150,35 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
+	switch cs := cfg.CredentialStorage; cs {
+	case "plain":
+		if cfg.F5.Password == "" {
+			fmt.Print("Password: ")
+			pass, err := gopass.GetPasswd()
+			if err != nil {
+				fatal("cannot read password: ", err)
+			}
+			fmt.Println("")
+			cfg.F5.Password = string(pass)
+		}
+	case "secret":
+		cfg.F5.User, cfg.F5.Password, err = readUserCredentials(cfg.SecretStorePath, cfg.Passphrase)
+		if err != nil {
+			fatal("cannot read username/password from secret store: ", err)
+		}
+	default:
+		fatal(fmt.Sprintf("unsupported credential storage %q", cs))
+	}
 
 	f5Client, err := initF5Client(cfg.F5)
 	if err != nil {
 		fatal(err)
 	}
+	/*if !f5Client.IsActive() {
+		fatal(fmt.Sprintf("big-ip instance %q is not available at the moment", cfg.F5.URL))
+	} else {
+		verbose("big-ip instance is available and rest client has been successfully configured")
+	}*/
 
 	l := newLogger(os.Stderr)
 
